@@ -1,0 +1,772 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-11-07T03:21:49.801Z",
+  "__export_source": "insomnia.desktop.app:v10.0.0",
+  "resources": [
+    {
+      "_id": "wrk_taskboard_s15",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "TaskBoard · Casos límite (Semana 15)",
+      "scope": "collection",
+      "description": "Guías 15 y 16 (Semana 15). Ejecuta primero \"0. Preparación › Login Ana\". Las pruebas tienen el resultado ESPERADO: el jueves CL-07, CL-09, CL-12 y el POST sin Accept quedan en rojo a propósito; el viernes, tras corregir, toda la colección queda en verde."
+    },
+    {
+      "_id": "env_taskboard_s15_base",
+      "_type": "environment",
+      "parentId": "wrk_taskboard_s15",
+      "name": "Base Environment",
+      "data": {
+        "host": "http://127.0.0.1:8000/api",
+        "tokenAna": "",
+        "transaccionCL15": ""
+      }
+    },
+    {
+      "_id": "fld_s15_prep",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s15",
+      "name": "0. Preparación",
+      "description": "Login de Ana: guarda tokenAna para toda la colección.",
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_s15_003",
+      "_type": "request",
+      "parentId": "fld_s15_prep",
+      "name": "Login Ana (201)",
+      "method": "POST",
+      "url": "{{ _.host }}/login",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"ana@taskboard.test\",\n  \"password\": \"password123\",\n  \"dispositivo\": \"insomnia-s15\"\n}"
+      },
+      "authentication": {},
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Login responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.baseEnvironment.set(\"tokenAna\", insomnia.response.json().token);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_s15_004",
+      "_type": "request",
+      "parentId": "fld_s15_prep",
+      "name": "LEEME · GET /yo (200)",
+      "method": "GET",
+      "url": "{{ _.host }}/yo",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Comprueba que el servidor corre y que el token sirve antes de empezar.",
+      "afterResponseScript": "insomnia.test(\"LEEME responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 3
+    },
+    {
+      "_id": "fld_s15_res",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s15",
+      "name": "1. Resueltos",
+      "description": "Nivel 1: casos ya armados. CL-02 pasa; CL-07 falla el jueves a propósito.",
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_s15_006",
+      "_type": "request",
+      "parentId": "fld_s15_res",
+      "name": "CL-02 · Monto cero",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": 0\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Valor límite: justo debajo del mínimo 0.01. Esperado: 422 con error en monto.",
+      "afterResponseScript": "insomnia.test(\"CL-02 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-02 marca error en monto\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 5
+    },
+    {
+      "_id": "req_s15_007",
+      "_type": "request",
+      "parentId": "fld_s15_res",
+      "name": "CL-07 · Monto sobre el máximo",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": 100000000\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Valor límite: un centavo por encima de 99,999,999.99 (máximo de decimal(10,2)).\nEN ROJO A PROPÓSITO el jueves: la regla no tiene max y SQLite lo guarda (201); con MySQL da 500. Se corrige el viernes (E-01).",
+      "afterResponseScript": "insomnia.test(\"CL-07 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-07 marca error en monto\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 6
+    },
+    {
+      "_id": "fld_s15_semi",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s15",
+      "name": "2. Semiarmados",
+      "description": "Nivel 2: el esperado se decidió ANTES de enviar.",
+      "metaSortKey": 7
+    },
+    {
+      "_id": "req_s15_009",
+      "_type": "request",
+      "parentId": "fld_s15_semi",
+      "name": "CL-01 · Monto 0.01",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": 0.01\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Valor límite: el mínimo exacto permitido. Esperado: 201.",
+      "afterResponseScript": "insomnia.test(\"CL-01 responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 8
+    },
+    {
+      "_id": "req_s15_010",
+      "_type": "request",
+      "parentId": "fld_s15_semi",
+      "name": "CL-03 · Monto -0.01",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": -0.01\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Partición: montos negativos. Esperado: 422 en monto.",
+      "afterResponseScript": "insomnia.test(\"CL-03 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-03 marca error en monto\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 9
+    },
+    {
+      "_id": "req_s15_011",
+      "_type": "request",
+      "parentId": "fld_s15_semi",
+      "name": "CL-04 · comercio_id 999",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 999,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": 25.5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Caso negativo: comercio inexistente. Esperado: 422 en comercio_id.",
+      "afterResponseScript": "insomnia.test(\"CL-04 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-04 marca error en comercio_id\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"comercio_id\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 10
+    },
+    {
+      "_id": "req_s15_012",
+      "_type": "request",
+      "parentId": "fld_s15_semi",
+      "name": "CL-05 · Monto \"25,50\"",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": \"25,50\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Partición: número con coma decimal (formato local). Esperado: 422 en monto.",
+      "afterResponseScript": "insomnia.test(\"CL-05 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-05 marca error en monto\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 11
+    },
+    {
+      "_id": "req_s15_013",
+      "_type": "request",
+      "parentId": "fld_s15_semi",
+      "name": "CL-09 · Monto 25.999",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": 25.999\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Partición: tres decimales. Esperado: 422 en monto.\nEN ROJO el jueves: se acepta y se redondea a 26.00 (E-02).",
+      "afterResponseScript": "insomnia.test(\"CL-09 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-09 marca error en monto\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 12
+    },
+    {
+      "_id": "fld_s15_cero",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s15",
+      "name": "3. Desde cero",
+      "description": "Nivel 3: casos creados aplicando las tres técnicas.",
+      "metaSortKey": 13
+    },
+    {
+      "_id": "req_s15_015",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-06 · comercio_id con texto \"abc\"",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": \"abc\",\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": 25.5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Caso negativo: tipo incorrecto. Esperado: 422 en comercio_id (nunca 500).",
+      "afterResponseScript": "insomnia.test(\"CL-06 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-06 marca error en comercio_id\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"comercio_id\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 14
+    },
+    {
+      "_id": "req_s15_016",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-08 · cliente_nombre de 255 caracteres",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"monto\": 25.5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Valor límite: el máximo exacto (max:255). El texto de 255 \"a\" va escrito en el cuerpo. Esperado: 201.",
+      "afterResponseScript": "insomnia.test(\"CL-08 responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.test(\"CL-08 guarda los 255 caracteres\", () => {\n  insomnia.expect(insomnia.response.json().data.cliente.length).to.equal(255);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 15
+    },
+    {
+      "_id": "req_s15_017",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-10 · cliente_nombre de 256 caracteres",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n  \"monto\": 25.5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Valor límite: un carácter sobre el máximo. Esperado: 422 en cliente_nombre.",
+      "afterResponseScript": "insomnia.test(\"CL-10 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-10 marca error en cliente_nombre\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"cliente_nombre\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 16
+    },
+    {
+      "_id": "req_s15_018",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-11 · cliente_nombre con solo espacios",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"     \",\n  \"monto\": 25.5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Partición: texto \"vacío\" disfrazado. Laravel recorta espacios (TrimStrings) y lo vuelve null. Esperado: 422 en cliente_nombre.",
+      "afterResponseScript": "insomnia.test(\"CL-11 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-11 marca error en cliente_nombre\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"cliente_nombre\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 17
+    },
+    {
+      "_id": "req_s15_019",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-12 · Enviar \"estado\": \"Completada\" al crear",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": 25.5,\n  \"estado\": \"Completada\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Contrato: ¿qué hace la API con un campo que no debe venir? El jueves: 201 y se ignora en silencio (⚠ contrato ambiguo, E-03). Decisión del viernes: rechazarlo con 422 en estado (regla prohibited).",
+      "afterResponseScript": "insomnia.test(\"CL-12 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-12 marca error en estado\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"estado\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 18
+    },
+    {
+      "_id": "req_s15_020",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-13 · JSON con una coma al final",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{ \"comercio_id\": 1, \"cliente_nombre\": \"Luis\", \"monto\": 25.50, }"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Caso negativo: JSON mal formado. Esperado: error del cliente en JSON (422), nunca 500.",
+      "afterResponseScript": "insomnia.test(\"CL-13 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-13 responde JSON (no HTML)\", () => {\n  insomnia.expect(insomnia.response.json()).to.be.a(\"object\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 19
+    },
+    {
+      "_id": "req_s15_021",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-14 · JSON sin Content-Type application/json",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "text/plain"
+        }
+      ],
+      "body": {
+        "mimeType": "text/plain",
+        "text": "{ \"comercio_id\": 1, \"cliente_nombre\": \"Luis\", \"monto\": 25.50 }"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Caso negativo: el cuerpo es JSON válido pero viaja como text/plain, así que Laravel no lo interpreta. Esperado: 422 en JSON, nunca 500.",
+      "afterResponseScript": "insomnia.test(\"CL-14 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"CL-14 responde JSON (no HTML)\", () => {\n  insomnia.expect(insomnia.response.json()).to.be.a(\"object\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 20
+    },
+    {
+      "_id": "req_s15_022",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-15a · Crear transacción para el experimento",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Idempotencia\",\n  \"monto\": 25.5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Paso previo del experimento de idempotencia: guarda el id en transaccionCL15.",
+      "afterResponseScript": "insomnia.test(\"CL-15a responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.baseEnvironment.set(\"transaccionCL15\", insomnia.response.json().data.id);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 21
+    },
+    {
+      "_id": "req_s15_023",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-15b · DELETE (primer envío)",
+      "method": "DELETE",
+      "url": "{{ _.host }}/transacciones/{{ _.transaccionCL15 }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Idempotencia: primer envío. Esperado: 204.",
+      "afterResponseScript": "insomnia.test(\"CL-15b responde 204\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 22
+    },
+    {
+      "_id": "req_s15_024",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-15c · DELETE (segundo envío, igual)",
+      "method": "DELETE",
+      "url": "{{ _.host }}/transacciones/{{ _.transaccionCL15 }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Idempotencia: la misma petición otra vez. Esperado: 404; el estado de la base no cambia.",
+      "afterResponseScript": "insomnia.test(\"CL-15c responde 404\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 23
+    },
+    {
+      "_id": "req_s15_025",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-16 · Monto como texto \"25.50\"",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Luis Mena\",\n  \"monto\": \"25.50\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Caso propio · partición: número enviado como texto. La regla numeric lo acepta. Esperado: 201 con monto 25.5.",
+      "afterResponseScript": "insomnia.test(\"CL-16 responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.test(\"CL-16 guarda 25.5\", () => {\n  insomnia.expect(insomnia.response.json().data.monto).to.equal(25.5);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 24
+    },
+    {
+      "_id": "req_s15_026",
+      "_type": "request",
+      "parentId": "fld_s15_cero",
+      "name": "CL-17 · Ana pide una transacción de Carlos",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/3",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Caso propio · caso negativo con Sanctum: la transacción 3 es del comercio de Carlos. Esperado: 404 (no existe para Ana).",
+      "afterResponseScript": "insomnia.test(\"CL-17 responde 404\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 25
+    },
+    {
+      "_id": "fld_s15_err",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s15",
+      "name": "4. Viernes · Errores uniformes",
+      "description": "Laboratorio 4 de la guía del viernes: en /api siempre JSON.",
+      "metaSortKey": 26
+    },
+    {
+      "_id": "req_s15_028",
+      "_type": "request",
+      "parentId": "fld_s15_err",
+      "name": "POST inválido SIN Accept",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"monto\": -5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Antes (Semana 13-14): 302 redirección. Con shouldRenderJsonWhen en bootstrap/app.php: 422 en JSON aunque falte Accept.",
+      "afterResponseScript": "insomnia.test(\"Sin Accept responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"Sin Accept responde JSON (no HTML)\", () => {\n  insomnia.expect(insomnia.response.json()).to.be.a(\"object\");\n});",
+      "settingFollowRedirects": "off",
+      "metaSortKey": 27
+    },
+    {
+      "_id": "req_s15_029",
+      "_type": "request",
+      "parentId": "fld_s15_err",
+      "name": "GET /prueba-error-bd con Accept (ruta temporal)",
+      "method": "GET",
+      "url": "{{ _.host }}/prueba-error-bd",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {},
+      "parameters": [],
+      "description": "Ruta TEMPORAL del laboratorio 4 (ya borrada). Mientras existió respondía 500 con el mensaje genérico; ahora responde 404. En ambos casos: JSON y sin detalles de SQL.",
+      "afterResponseScript": "insomnia.test(\"Error BD responde JSON (no HTML)\", () => {\n  insomnia.expect(insomnia.response.json()).to.be.a(\"object\");\n});\n\ninsomnia.test(\"Error BD no filtra SQL ni nombres de tablas\", () => {\n  insomnia.expect(JSON.stringify(insomnia.response.json()).includes(\"tabla_que_no_existe\")).to.equal(false);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 28
+    },
+    {
+      "_id": "req_s15_030",
+      "_type": "request",
+      "parentId": "fld_s15_err",
+      "name": "GET /prueba-error-bd SIN Accept (ruta temporal)",
+      "method": "GET",
+      "url": "{{ _.host }}/prueba-error-bd",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "parameters": [],
+      "description": "Igual que la anterior pero sin Accept: con shouldRenderJsonWhen también responde JSON.",
+      "afterResponseScript": "insomnia.test(\"Error BD sin Accept responde JSON (no HTML)\", () => {\n  insomnia.expect(insomnia.response.json()).to.be.a(\"object\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 29
+    }
+  ]
+}

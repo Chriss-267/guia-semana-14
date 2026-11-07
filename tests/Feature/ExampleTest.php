@@ -8,12 +8,13 @@ use Tests\TestCase;
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
+     * Desde la Semana 12 la raíz manda a /comercios, que exige sesión:
+     * sin login termina en /login, que sí responde 200.
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        $response = $this->get('/');
+        $this->get('/')->assertRedirect(route('comercios.index'));
 
-        $response->assertStatus(200);
+        $this->get('/login')->assertStatus(200);
     }
 }

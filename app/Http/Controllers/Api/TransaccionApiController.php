@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Semana 13 · Transacciones por la API. Sin vistas: todo responde JSON
@@ -53,14 +54,25 @@ class TransaccionApiController extends Controller
      *
      * GuardarTransaccionRequest solo acepta un comercio_id propio: el
      * comercio de otro usuario responde 422.
+     *
+     * Semana 15: la transacción y su evento de creación se guardan juntos.
+     * Si algo falla entre los dos pasos, DB::transaction() hace ROLLBACK y
+     * no queda una transacción sin bitácora (experimento del laboratorio 5).
      */
     public function store(GuardarTransaccionRequest $request): JsonResponse
     {
-        $transaccion = Transaccion::create($request->validated());
+        $t = DB::transaction(function () use ($request) {
+            $t = Transaccion::create($request->validated());
 
-        return (new TransaccionResource($transaccion->refresh()))
-            ->response()
-            ->setStatusCode(201);
+            $t->eventos()->create([
+                'tipo_evento' => 'creacion',
+                'detalle' => 'Transacción iniciada',
+            ]);
+
+            return $t;
+        });
+
+        return (new TransaccionResource($t->refresh()))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, Transaccion $transaccion): TransaccionResource
