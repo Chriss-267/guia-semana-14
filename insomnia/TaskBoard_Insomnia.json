@@ -1,0 +1,601 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-24T01:23:42.935Z",
+  "__export_source": "insomnia.desktop.app:v10.0.0",
+  "resources": [
+    {
+      "_id": "wrk_taskboard",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "TaskBoard API",
+      "scope": "collection",
+      "description": "Guía 14 (Semana 14 viernes): colección con dos identidades (Ana y Carlos), tokens guardados por script y tests automáticos. Ejecuta primero \"0. Públicas\" o el Runner de toda la colección."
+    },
+    {
+      "_id": "env_taskboard_base",
+      "_type": "environment",
+      "parentId": "wrk_taskboard",
+      "name": "Base Environment",
+      "data": {
+        "host": "http://127.0.0.1:8000/api",
+        "tokenAna": "",
+        "tokenCarlos": "",
+        "transaccionAna": "",
+        "transaccionNueva": ""
+      }
+    },
+    {
+      "_id": "fld_publicas",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard",
+      "name": "0. Públicas",
+      "description": "Sin token. Los logins guardan tokenAna y tokenCarlos en el Base Environment.",
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_003",
+      "_type": "request",
+      "parentId": "fld_publicas",
+      "name": "Login Ana (201)",
+      "method": "POST",
+      "url": "{{ _.host }}/login",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"ana@taskboard.test\",\n  \"password\": \"password123\",\n  \"dispositivo\": \"insomnia-Ana\"\n}"
+      },
+      "authentication": {},
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\nconst cuerpo = insomnia.response.json();\ninsomnia.test(\"Trae un token\", () => {\n  insomnia.expect(cuerpo.token).to.be.a(\"string\");\n});\n\n// Guarda el token para las carpetas de Ana\ninsomnia.baseEnvironment.set(\"tokenAna\", cuerpo.token);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_004",
+      "_type": "request",
+      "parentId": "fld_publicas",
+      "name": "Login Carlos (201)",
+      "method": "POST",
+      "url": "{{ _.host }}/login",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"carlos@taskboard.test\",\n  \"password\": \"password123\",\n  \"dispositivo\": \"insomnia-Carlos\"\n}"
+      },
+      "authentication": {},
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\nconst cuerpo = insomnia.response.json();\ninsomnia.test(\"Trae un token\", () => {\n  insomnia.expect(cuerpo.token).to.be.a(\"string\");\n});\n\n// Guarda el token para las carpetas de Carlos\ninsomnia.baseEnvironment.set(\"tokenCarlos\", cuerpo.token);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 3
+    },
+    {
+      "_id": "req_005",
+      "_type": "request",
+      "parentId": "fld_publicas",
+      "name": "Login inválido (422)",
+      "method": "POST",
+      "url": "{{ _.host }}/login",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"ana@taskboard.test\",\n  \"password\": \"clave-incorrecta\",\n  \"dispositivo\": \"insomnia-error\"\n}"
+      },
+      "authentication": {},
+      "parameters": [],
+      "description": "Matriz #2. Si lo ejecutas 6 veces seguidas en un minuto responde 429 (límite de intentos).",
+      "afterResponseScript": "insomnia.test(\"Responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\n\ninsomnia.test(\"Explica el error en errors.email\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"email\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_006",
+      "_type": "request",
+      "parentId": "fld_publicas",
+      "name": "Comercios sin token (401)",
+      "method": "GET",
+      "url": "{{ _.host }}/comercios",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {},
+      "parameters": [],
+      "description": "Matriz #3. Con Accept: application/json la API responde 401 en JSON.",
+      "afterResponseScript": "insomnia.test(\"Responde 401\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 5
+    },
+    {
+      "_id": "req_007",
+      "_type": "request",
+      "parentId": "fld_publicas",
+      "name": "Comercios sin token y SIN Accept (302)",
+      "method": "GET",
+      "url": "{{ _.host }}/comercios",
+      "headers": [],
+      "body": {},
+      "authentication": {},
+      "parameters": [],
+      "description": "Lab 1 #2. Sin Accept: application/json Laravel cree que es un navegador y redirige a /login. Seguir redirecciones está apagado en esta petición para ver el 302.",
+      "afterResponseScript": "insomnia.test(\"Responde 302\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(302);\n});",
+      "settingFollowRedirects": "off",
+      "metaSortKey": 6
+    },
+    {
+      "_id": "fld_ana",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard",
+      "name": "1. Ana",
+      "description": "Todas usan Bearer {{ _.tokenAna }}. Ana tiene los comercios 1 y 3.",
+      "metaSortKey": 7
+    },
+    {
+      "_id": "req_009",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Yo (200 · Ana López)",
+      "method": "GET",
+      "url": "{{ _.host }}/yo",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test(\"Soy Ana López\", () => {\n  insomnia.expect(insomnia.response.json().name).to.equal(\"Ana López\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 8
+    },
+    {
+      "_id": "req_010",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Comercios (200 · 2 comercios)",
+      "method": "GET",
+      "url": "{{ _.host }}/comercios",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\nconst { data } = insomnia.response.json();\ninsomnia.test(\"Ana solo ve sus 2 comercios\", () => {\n  insomnia.expect(data.length).to.equal(2);\n});\ninsomnia.test(\"No se expone user_id\", () => {\n  insomnia.expect(data[0]).to.not.have.property(\"user_id\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 9
+    },
+    {
+      "_id": "req_011",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Comercio 1 propio (200)",
+      "method": "GET",
+      "url": "{{ _.host }}/comercios/1",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test(\"Es el comercio 1\", () => {\n  insomnia.expect(insomnia.response.json().data.id).to.equal(1);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 10
+    },
+    {
+      "_id": "req_012",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Comercio 2 de Carlos (404)",
+      "method": "GET",
+      "url": "{{ _.host }}/comercios/2",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Matriz #7. El comercio 2 es de Carlos: para Ana no existe.",
+      "afterResponseScript": "insomnia.test(\"Responde 404\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 11
+    },
+    {
+      "_id": "req_013",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Transacciones (200 · guarda transaccionAna)",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\nconst { data } = insomnia.response.json();\ninsomnia.test(\"Ninguna es del comercio 2 (Carlos)\", () => {\n  insomnia.expect(data.every(t => t.comercio_id !== 2)).to.equal(true);\n});\n\n// Id de una transacción de Ana para la matriz #9 (Carlos intenta borrarla)\nif (data.length) insomnia.baseEnvironment.set(\"transaccionAna\", data[0].id);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 12
+    },
+    {
+      "_id": "req_014",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Transacciones Completadas (200)",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [
+        {
+          "name": "estado",
+          "value": "Completada"
+        }
+      ],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test(\"Todas están Completadas\", () => {\n  const { data } = insomnia.response.json();\n  insomnia.expect(data.every(t => t.estado === \"Completada\")).to.equal(true);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 13
+    },
+    {
+      "_id": "req_015",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Crear en comercio de Carlos (422)",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 2,\n  \"cliente_nombre\": \"Cliente de prueba\",\n  \"monto\": 10.5\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Matriz #8. comercio_id 2 existe, pero no es de Ana: la validación lo rechaza.",
+      "afterResponseScript": "insomnia.test(\"Responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\n\ninsomnia.test(\"El error está en comercio_id\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"comercio_id\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 14
+    },
+    {
+      "_id": "req_016",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Crear en mi comercio (201)",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Cliente Insomnia\",\n  \"monto\": 25.75\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\nconst { data } = insomnia.response.json();\ninsomnia.test(\"Nace Iniciada\", () => {\n  insomnia.expect(data.estado).to.equal(\"Iniciada\");\n});\ninsomnia.baseEnvironment.set(\"transaccionNueva\", data.id);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 15
+    },
+    {
+      "_id": "req_017",
+      "_type": "request",
+      "parentId": "fld_ana",
+      "name": "Eliminar mi transacción nueva (204)",
+      "method": "DELETE",
+      "url": "{{ _.host }}/transacciones/{{ _.transaccionNueva }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Borra la que se creó en la petición anterior.",
+      "afterResponseScript": "insomnia.test(\"Responde 204\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 16
+    },
+    {
+      "_id": "fld_carlos",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard",
+      "name": "2. Carlos",
+      "description": "Todas usan Bearer {{ _.tokenCarlos }}. Carlos solo tiene el comercio 2.",
+      "metaSortKey": 17
+    },
+    {
+      "_id": "req_019",
+      "_type": "request",
+      "parentId": "fld_carlos",
+      "name": "Yo (200 · Carlos)",
+      "method": "GET",
+      "url": "{{ _.host }}/yo",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenCarlos }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test(\"Soy Carlos\", () => {\n  insomnia.expect(insomnia.response.json().email).to.equal(\"carlos@taskboard.test\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 18
+    },
+    {
+      "_id": "req_020",
+      "_type": "request",
+      "parentId": "fld_carlos",
+      "name": "Comercios (200 · 1 comercio)",
+      "method": "GET",
+      "url": "{{ _.host }}/comercios",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenCarlos }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test(\"Carlos solo ve 1 comercio\", () => {\n  insomnia.expect(insomnia.response.json().data.length).to.equal(1);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 19
+    },
+    {
+      "_id": "req_021",
+      "_type": "request",
+      "parentId": "fld_carlos",
+      "name": "Transacciones (200)",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenCarlos }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\n\ninsomnia.test(\"Todas son de su comercio 2\", () => {\n  const { data } = insomnia.response.json();\n  insomnia.expect(data.every(t => t.comercio_id === 2)).to.equal(true);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 20
+    },
+    {
+      "_id": "req_022",
+      "_type": "request",
+      "parentId": "fld_carlos",
+      "name": "Comercio 1 de Ana (404)",
+      "method": "GET",
+      "url": "{{ _.host }}/comercios/1",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenCarlos }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 404\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 21
+    },
+    {
+      "_id": "req_023",
+      "_type": "request",
+      "parentId": "fld_carlos",
+      "name": "Eliminar transacción de Ana (404)",
+      "method": "DELETE",
+      "url": "{{ _.host }}/transacciones/{{ _.transaccionAna }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenCarlos }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Matriz #9. Usa transaccionAna, que guarda \"1. Ana › Transacciones\". Ejecuta esa antes.",
+      "afterResponseScript": "insomnia.test(\"Responde 404\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(404);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 22
+    },
+    {
+      "_id": "fld_cierre",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard",
+      "name": "3. Cierre de sesión (Ana)",
+      "description": "Matriz #10. Revoca el token de Ana; después vuelve a ejecutar \"Login Ana\".",
+      "metaSortKey": 23
+    },
+    {
+      "_id": "req_025",
+      "_type": "request",
+      "parentId": "fld_cierre",
+      "name": "Logout Ana (204)",
+      "method": "POST",
+      "url": "{{ _.host }}/logout",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 204\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 24
+    },
+    {
+      "_id": "req_026",
+      "_type": "request",
+      "parentId": "fld_cierre",
+      "name": "Yo con token revocado (401)",
+      "method": "GET",
+      "url": "{{ _.host }}/yo",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Responde 401\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 25
+    }
+  ]
+}

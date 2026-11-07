@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cliente TaskBoard</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+        form { display: flex; gap: .5rem; flex-wrap: wrap; }
+        input { padding: .4rem; }
+        li { margin: .3rem 0; }
+        .completadas { color: #166534; font-weight: 600; }
+        [hidden] { display: none !important; }
+    </style>
+</head>
+<body>
+    <h1>Tienda en línea · Mis comercios en TaskBoard</h1>
+
+    <form id="login">
+        <input id="email" type="email" value="ana@taskboard.test">
+        <input id="password" type="password" value="password123">
+        <button type="submit">Entrar</button>
+    </form>
+
+    <section id="panel" hidden>
+        <p><strong id="usuario"></strong> <button id="salir" type="button">Salir</button></p>
+        <ul id="lista"></ul>
+    </section>
+
+    <p id="estado"></p>
+
+    <script>
+        const base = '/api';
+        let token = null; // en memoria: se pierde al recargar
+
+        const $ = (id) => document.getElementById(id);
+
+        // Reto 3: cualquier 401 devuelve al formulario de login.
+        function mostrarLogin(mensaje) {
+            token = null;
+            $('panel').hidden = true;
+            $('login').hidden = false;
+            $('lista').replaceChildren();
+            $('estado').textContent = mensaje ?? '';
+        }
+
+        // Todas las peticiones protegidas pasan por aquí.
+        async function api(ruta, opciones = {}) {
+            const r = await fetch(base + ruta, {
+                ...opciones,
+                headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + token, ...(opciones.headers ?? {}) },
+            });
+            if (r.status === 401) {
+                mostrarLogin('Sesión vencida: vuelve a entrar.');
+                return null;
+            }
+            return r;
+        }
+
+        $('login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const r = await fetch(base + '/login', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: $('email').value,
+                    password: $('password').value,
+                    dispositivo: 'cliente-web',
+                }),
+            });
+            if (r.status !== 201) {
+                $('estado').textContent = 'Credenciales incorrectas (' + r.status + ')';
+                return;
+            }
+            const cuerpo = await r.json();
+            token = cuerpo.token;
+            $('usuario').textContent = cuerpo.user.name;
+            $('login').hidden = true;
+            $('panel').hidden = false;
+            cargarComercios();
+        });
+
+        async function cargarComercios() {
+            const [rc, rt] = await Promise.all([
+                api('/comercios'),
+                api('/transacciones?estado=Completada'),
+            ]);
+            if (!rc || !rt) return;
+
+            const { data } = await rc.json();
+            const completadas = (await rt.json()).data;
+
+            // Reto 1: cantidad de Completadas agrupadas por comercio_id.
+            const porComercio = {};
+            completadas.forEach(t => {
+                porComercio[t.comercio_id] = (porComercio[t.comercio_id] ?? 0) + 1;
+            });
+
+            const lista = $('lista');
+            lista.replaceChildren();
+            data.forEach(c => {
+                const li = document.createElement('li');
+                li.textContent = c.nombre + ' · ' + (c.rubro ?? 'Sin rubro') + ' — ';
+                const span = document.createElement('span');
+                span.className = 'completadas';
+                span.textContent = (porComercio[c.id] ?? 0) + ' completada(s)';
+                li.appendChild(span);
+                lista.appendChild(li);
+            });
+            $('estado').textContent = data.length + ' comercio(s)';
+        }
+
+        // Reto 2: Salir revoca el token en el servidor y lo borra de la variable.
+        $('salir').addEventListener('click', async () => {
+            const r = await api('/logout', { method: 'POST' });
+            if (r) mostrarLogin('Sesión cerrada.');
+        });
+    </script>
+</body>
+</html>
