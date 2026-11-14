@@ -7,6 +7,47 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## API · Filtro de transacciones
+
+`GET /api/transacciones/filtrar`
+
+**Autenticación:** obligatoria. Encabezados `Authorization: Bearer <token>` (se obtiene con `POST /api/login`)
+y `Accept: application/json`. Solo devuelve las transacciones de los comercios del usuario dueño del token.
+
+**Parámetros** (todos opcionales, por query string; se combinan entre sí):
+
+| Parámetro | Tipo | Valores válidos |
+|---|---|---|
+| `estado` | texto | `Iniciada`, `Completada` o `Fallida` (exacto, con mayúscula inicial) |
+| `desde` | fecha `AAAA-MM-DD` | transacciones creadas desde ese día (incluido) |
+| `hasta` | fecha `AAAA-MM-DD` | hasta ese día (incluido completo); si viene `desde`, debe ser igual o posterior |
+| `monto_min` | número | mayor o igual a 0 |
+| `monto_max` | número | mayor o igual a 0; si viene `monto_min`, debe ser igual o mayor |
+
+**Respuestas:**
+
+| Código | Cuándo |
+|---|---|
+| 200 | Lista en `data` (puede venir vacía), cada elemento con `id`, `comercio_id`, `cliente`, `monto`, `estado`, `fecha` |
+| 401 | Sin token o token inválido |
+| 422 | Algún parámetro inválido; `errors` dice cuál |
+
+**Ejemplo:**
+
+```http
+GET /api/transacciones/filtrar?estado=Completada&desde=2026-11-01&hasta=2026-11-13&monto_min=20
+Authorization: Bearer TOKEN_DE_EJEMPLO
+Accept: application/json
+```
+
+```json
+{
+  "data": [
+    { "id": 1, "comercio_id": 1, "cliente": "María López", "monto": 45, "estado": "Completada", "fecha": "2026-11-07T15:20:00+00:00" }
+  ]
+}
+```
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

@@ -1,0 +1,692 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-11-14T02:21:24.374Z",
+  "__export_source": "insomnia.desktop.app:v10",
+  "resources": [
+    {
+      "_id": "wrk_taskboard_s16",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "TaskBoard · Semana 16 (IA crítica y mantenimiento)",
+      "description": "Guías 17 (jueves) y 18 (viernes). Ejecutar primero \"0. Preparación\". Para la regresión, correr también la colección de la Semana 15.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_taskboard_s16_base",
+      "_type": "environment",
+      "parentId": "wrk_taskboard_s16",
+      "name": "Base Environment",
+      "data": {
+        "host": "http://127.0.0.1:8000/api",
+        "tokenAna": "",
+        "tokenCarlos": "",
+        "hoy": "",
+        "transaccionHoy": ""
+      }
+    },
+    {
+      "_id": "fld_s16_prep",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s16",
+      "name": "0. Preparación",
+      "description": "Logins de Ana y Carlos y una transacción creada HOY (para F-8 y M-1).",
+      "environment": {},
+      "metaSortKey": 0
+    },
+    {
+      "_id": "req_s16_001",
+      "_type": "request",
+      "parentId": "fld_s16_prep",
+      "name": "Login Ana (201)",
+      "method": "POST",
+      "url": "{{ _.host }}/login",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"ana@taskboard.test\",\n  \"password\": \"password123\",\n  \"dispositivo\": \"insomnia-s16\"\n}"
+      },
+      "authentication": {},
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Login Ana responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.baseEnvironment.set(\"tokenAna\", insomnia.response.json().token);\n// \"hoy\" en UTC: es la zona de la app (config/app.php), la misma de created_at.\ninsomnia.baseEnvironment.set(\"hoy\", new Date().toISOString().slice(0, 10));",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_s16_002",
+      "_type": "request",
+      "parentId": "fld_s16_prep",
+      "name": "Login Carlos (201)",
+      "method": "POST",
+      "url": "{{ _.host }}/login",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"carlos@taskboard.test\",\n  \"password\": \"password123\",\n  \"dispositivo\": \"insomnia-s16\"\n}"
+      },
+      "authentication": {},
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Login Carlos responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.baseEnvironment.set(\"tokenCarlos\", insomnia.response.json().token);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_s16_003",
+      "_type": "request",
+      "parentId": "fld_s16_prep",
+      "name": "Crear transacción de HOY para Ana (201)",
+      "method": "POST",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        },
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comercio_id\": 1,\n  \"cliente_nombre\": \"Prueba Semana 16\",\n  \"monto\": 150\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Transacción con fecha de hoy y monto 150: la usan F-8 (?hasta=hoy debe incluirla) y M-1. Se borra en \"9. Limpieza\".",
+      "afterResponseScript": "insomnia.test(\"Crear de hoy responde 201\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(201);\n});\n\ninsomnia.baseEnvironment.set(\"transaccionHoy\", insomnia.response.json().data.id);",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 3
+    },
+    {
+      "_id": "fld_s16_filtro",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s16",
+      "name": "4. Filtro",
+      "description": "Guía 17 · Laboratorio 4. GET /api/transacciones/filtrar",
+      "environment": {},
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_s16_004",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-1 · Sin token → 401",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {},
+      "parameters": [],
+      "description": "Esperado: 401 (la ruta está dentro de auth:sanctum).",
+      "afterResponseScript": "insomnia.test(\"F-1 responde 401\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(401);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 5
+    },
+    {
+      "_id": "req_s16_005",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-2 · Ana ?estado=Completada → 200 solo de Ana",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?estado=Completada",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200; solo Completadas y solo de los comercios de Ana (1 y 3).",
+      "afterResponseScript": "insomnia.test(\"F-2 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"F-2 solo Completadas de Ana\", () => {\n  const data = insomnia.response.json().data;\n  insomnia.expect(data).to.be.an(\"array\");\n  data.forEach((t) => insomnia.expect([1, 3].includes(t.comercio_id) && t.estado === \"Completada\").to.equal(true));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 6
+    },
+    {
+      "_id": "req_s16_006",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-3 · Carlos ?estado=Completada → 200 solo de Carlos",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?estado=Completada",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenCarlos }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200; solo del comercio de Carlos (2). Carlos no tiene Completadas: \"data\": [] es correcto (no ve las de Ana).",
+      "afterResponseScript": "insomnia.test(\"F-3 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"F-3 nada que no sea de Carlos\", () => {\n  const data = insomnia.response.json().data;\n  insomnia.expect(data).to.be.an(\"array\");\n  data.forEach((t) => insomnia.expect(t.comercio_id === 2).to.equal(true));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 7
+    },
+    {
+      "_id": "req_s16_007",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-4 · ?estado=Pagada → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?estado=Pagada",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 422 con error en estado.",
+      "afterResponseScript": "insomnia.test(\"F-4 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"F-4 marca error en estado\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"estado\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 8
+    },
+    {
+      "_id": "req_s16_008",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-5 · ?estado=x' OR '1'='1 → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?estado=x'%20OR%20'1'%3D'1",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Inyección SQL. Esperado: 422 (no es un estado válido; además Eloquent la trataría como texto).",
+      "afterResponseScript": "insomnia.test(\"F-5 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"F-5 marca error en estado\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"estado\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 9
+    },
+    {
+      "_id": "req_s16_009",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-6 · ?desde=hola → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?desde=hola",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 422 con error en desde.",
+      "afterResponseScript": "insomnia.test(\"F-6 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"F-6 marca error en desde\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"desde\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 10
+    },
+    {
+      "_id": "req_s16_010",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-7 · ?desde=2026-11-10&hasta=2026-11-01 → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?desde=2026-11-10&hasta=2026-11-01",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 422 (\"hasta\" antes de \"desde\").",
+      "afterResponseScript": "insomnia.test(\"F-7 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"F-7 marca error en hasta\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"hasta\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 11
+    },
+    {
+      "_id": "req_s16_011",
+      "_type": "request",
+      "parentId": "fld_s16_filtro",
+      "name": "F-8 · ?hasta=(hoy) → 200 incluye las de hoy",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?hasta={{ _.hoy }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200 y debe aparecer la transacción creada hoy en \"0. Preparación\" (whereDate incluye el día completo).",
+      "afterResponseScript": "insomnia.test(\"F-8 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"F-8 incluye la transacción de hoy\", () => {\n  const ids = insomnia.response.json().data.map((t) => t.id);\n  insomnia.expect(ids).to.include(Number(insomnia.baseEnvironment.get(\"transaccionHoy\")));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 12
+    },
+    {
+      "_id": "fld_s16_mt013",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s16",
+      "name": "5. MT-013",
+      "description": "Guía 18 · Laboratorio 2. GET /api/transacciones con ?estado inválido.",
+      "environment": {},
+      "metaSortKey": 13
+    },
+    {
+      "_id": "req_s16_012",
+      "_type": "request",
+      "parentId": "fld_s16_mt013",
+      "name": "C-1 · ?estado=Pagada → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones?estado=Pagada",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Antes del cambio: 200 con \"data\": []. Esperado: 422 con error en estado.",
+      "afterResponseScript": "insomnia.test(\"C-1 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"C-1 marca error en estado\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"estado\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 14
+    },
+    {
+      "_id": "req_s16_013",
+      "_type": "request",
+      "parentId": "fld_s16_mt013",
+      "name": "C-2 · ?estado=Completada → 200 solo Completadas",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones?estado=Completada",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200, igual que antes.",
+      "afterResponseScript": "insomnia.test(\"C-2 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"C-2 solo Completadas\", () => {\n  const data = insomnia.response.json().data;\n  insomnia.expect(data).to.be.an(\"array\");\n  data.forEach((t) => insomnia.expect(t.estado === \"Completada\").to.equal(true));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 15
+    },
+    {
+      "_id": "req_s16_014",
+      "_type": "request",
+      "parentId": "fld_s16_mt013",
+      "name": "C-3 · sin ?estado → 200 igual que antes",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200 con todas las de Ana.",
+      "afterResponseScript": "insomnia.test(\"C-3 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"C-3 solo de Ana\", () => {\n  const data = insomnia.response.json().data;\n  insomnia.expect(data).to.be.an(\"array\");\n  data.forEach((t) => insomnia.expect([1, 3].includes(t.comercio_id)).to.equal(true));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 16
+    },
+    {
+      "_id": "req_s16_015",
+      "_type": "request",
+      "parentId": "fld_s16_mt013",
+      "name": "C-4 · ?estado=completada (minúsculas) → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones?estado=completada",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Decisión: 422. Los estados son un vocabulario fijo del contrato (Iniciada, Completada, Fallida); aceptar variantes sería aceptar entradas ambiguas.",
+      "afterResponseScript": "insomnia.test(\"C-4 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"C-4 marca error en estado\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"estado\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 17
+    },
+    {
+      "_id": "fld_s16_mt014",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s16",
+      "name": "6. MT-014",
+      "description": "Guía 18 · Laboratorio 3. monto_min y monto_max en el filtro.",
+      "environment": {},
+      "metaSortKey": 18
+    },
+    {
+      "_id": "req_s16_016",
+      "_type": "request",
+      "parentId": "fld_s16_mt014",
+      "name": "M-1 · ?monto_min=20 → 200 solo montos >= 20",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?monto_min=20",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200; todos con monto >= 20 (entra la de 150 de hoy y la de 45).",
+      "afterResponseScript": "insomnia.test(\"M-1 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"M-1 solo montos >= 20\", () => {\n  const data = insomnia.response.json().data;\n  insomnia.expect(data).to.be.an(\"array\");\n  data.forEach((t) => insomnia.expect(t.monto >= 20).to.equal(true));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 19
+    },
+    {
+      "_id": "req_s16_017",
+      "_type": "request",
+      "parentId": "fld_s16_mt014",
+      "name": "M-2 · ?monto_max=100 (sin mínimo) → 200",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?monto_max=100",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200 (no 422: la regla gte solo aplica si viene monto_min).",
+      "afterResponseScript": "insomnia.test(\"M-2 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"M-2 solo montos <= 100\", () => {\n  const data = insomnia.response.json().data;\n  insomnia.expect(data).to.be.an(\"array\");\n  data.forEach((t) => insomnia.expect(t.monto <= 100).to.equal(true));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 20
+    },
+    {
+      "_id": "req_s16_018",
+      "_type": "request",
+      "parentId": "fld_s16_mt014",
+      "name": "M-3 · ?monto_min=50&monto_max=10 → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?monto_min=50&monto_max=10",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 422 con error en monto_max.",
+      "afterResponseScript": "insomnia.test(\"M-3 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"M-3 marca error en monto_max\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto_max\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 21
+    },
+    {
+      "_id": "req_s16_019",
+      "_type": "request",
+      "parentId": "fld_s16_mt014",
+      "name": "M-4 · ?monto_min=-5 → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?monto_min=-5",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 422 con error en monto_min.",
+      "afterResponseScript": "insomnia.test(\"M-4 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"M-4 marca error en monto_min\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto_min\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 22
+    },
+    {
+      "_id": "req_s16_020",
+      "_type": "request",
+      "parentId": "fld_s16_mt014",
+      "name": "M-5 · ?monto_min=abc → 422",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?monto_min=abc",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 422 con error en monto_min.",
+      "afterResponseScript": "insomnia.test(\"M-5 responde 422\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(422);\n});\ninsomnia.test(\"M-5 marca error en monto_min\", () => {\n  insomnia.expect(insomnia.response.json().errors).to.have.property(\"monto_min\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 23
+    },
+    {
+      "_id": "req_s16_021",
+      "_type": "request",
+      "parentId": "fld_s16_mt014",
+      "name": "M-6 · ?estado=Completada&monto_min=20 → 200",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?estado=Completada&monto_min=20",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Esperado: 200; solo Completadas con monto >= 20 (los filtros se combinan).",
+      "afterResponseScript": "insomnia.test(\"M-6 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"M-6 Completadas con monto >= 20\", () => {\n  const data = insomnia.response.json().data;\n  insomnia.expect(data).to.be.an(\"array\");\n  data.forEach((t) => insomnia.expect(t.estado === \"Completada\" && t.monto >= 20).to.equal(true));\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 24
+    },
+    {
+      "_id": "req_s16_022",
+      "_type": "request",
+      "parentId": "fld_s16_mt014",
+      "name": "M-7 · ?monto_max=0 → 200 vacío",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones/filtrar?monto_max=0",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "Extra (corrección propia): con when($valor) un monto_max=0 se ignoraba y devolvía TODO. Esperado: 200 con \"data\": [] (ningún monto es <= 0).",
+      "afterResponseScript": "insomnia.test(\"M-7 responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"M-7 no devuelve nada\", () => {\n  insomnia.expect(insomnia.response.json().data.length).to.equal(0);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 25
+    },
+    {
+      "_id": "fld_s16_exp",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s16",
+      "name": "7. Experimento renombre",
+      "description": "Guía 18 · sección 7. Cambia TEMPORALMENTE TransaccionResource y vuelve a enviar; al final déjalo como estaba.",
+      "environment": {},
+      "metaSortKey": 26
+    },
+    {
+      "_id": "req_s16_023",
+      "_type": "request",
+      "parentId": "fld_s16_exp",
+      "name": "EXP · GET /transacciones tiene el campo \"cliente\"",
+      "method": "GET",
+      "url": "{{ _.host }}/transacciones",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "1) Tal como está: pasa. 2) Con solo nombre_cliente: FALLA (la tienda deja de ver el nombre). 3) Con cliente y nombre_cliente: pasa. 4) Deshacer.",
+      "afterResponseScript": "insomnia.test(\"EXP responde 200\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(200);\n});\ninsomnia.test(\"EXP data[0] tiene \\\"cliente\\\"\", () => {\n  insomnia.expect(insomnia.response.json().data[0]).to.have.property(\"cliente\");\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 27
+    },
+    {
+      "_id": "fld_s16_limpieza",
+      "_type": "request_group",
+      "parentId": "wrk_taskboard_s16",
+      "name": "9. Limpieza",
+      "description": "Borra la transacción de prueba creada hoy.",
+      "environment": {},
+      "metaSortKey": 28
+    },
+    {
+      "_id": "req_s16_024",
+      "_type": "request",
+      "parentId": "fld_s16_limpieza",
+      "name": "DELETE transacción de hoy (204)",
+      "method": "DELETE",
+      "url": "{{ _.host }}/transacciones/{{ _.transaccionHoy }}",
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.tokenAna }}",
+        "prefix": "Bearer"
+      },
+      "parameters": [],
+      "description": "",
+      "afterResponseScript": "insomnia.test(\"Limpieza responde 204\", () => {\n  insomnia.expect(insomnia.response.code).to.equal(204);\n});",
+      "settingFollowRedirects": "global",
+      "metaSortKey": 29
+    }
+  ]
+}

@@ -81,6 +81,12 @@ Route::middleware('auth:sanctum')->group(function () {
         return new ComercioResource($comercio->load('transacciones'));
     });
 
+    // Semana 16 (jueves): filtro por estado y rango de fechas (viernes: + monto).
+    // Va DENTRO de auth:sanctum y ANTES de apiResource: si fuera después,
+    // "filtrar" caería en transacciones/{transaccion} y respondería 404.
+    Route::get('/transacciones/filtrar', [TransaccionApiController::class, 'filtrar'])
+        ->name('api.transacciones.filtrar');
+
     // index, store, show, update y destroy. El parámetro se llama
     // {transaccion}; sin parameters() Laravel lo nombraría {transaccione}.
     // names(): "transacciones.store" ya es de los formularios web.
